@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="TestFilterMapParser" tests="1" skipped="0" failures="0" errors="0" timestamp="2021-04-06T18:29:43" hostname="DESKTOP-LLH0EC7" time="0.131">
+  <properties/>
+  <testcase name="testTransform" classname="TestFilterMapParser" time="0.131"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
