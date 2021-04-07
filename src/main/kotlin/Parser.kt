@@ -17,7 +17,7 @@ class Parser(private val groups: List<String>) {
 
     private fun parseCallChain(): CallChain {
         var left: CallChain = parseCall()
-        if(pos < groups.size ) {
+        if (pos < groups.size) {
             if (groups[pos] == "%>%") {
                 pos++
                 left = CallChain.Chain(left as CallChain.Call, parseCallChain())
@@ -31,20 +31,21 @@ class Parser(private val groups: List<String>) {
             "map{" to { expr: Expression -> CallChain.Call.MapCall(expr) },
             "filter{" to { expr: Expression -> CallChain.Call.FilterCall(expr) })
 
-    private val operationMap = mapOf("+" to Expression.Op.NumType.PLUS, "-" to Expression.Op.NumType.MINUS,
+    private val operationMap = mapOf(
+        "+" to Expression.Op.NumType.PLUS, "-" to Expression.Op.NumType.MINUS,
         "*" to Expression.Op.NumType.TIMES, ">" to Expression.Op.LogicType.GT,
-    "<" to Expression.Op.LogicType.LT, "&" to Expression.Op.LogicType.AND, "|" to Expression.Op.LogicType.OR,
+        "<" to Expression.Op.LogicType.LT, "&" to Expression.Op.LogicType.AND, "|" to Expression.Op.LogicType.OR,
         "=" to Expression.Op.LogicType.EQ
     )
 
-    private fun checkExprType(expr : Expression, makeCall : (Expression) -> CallChain.Call) : CallChain.Call {
-        when(val call = makeCall(expr)) {
+    private fun checkExprType(expr: Expression, makeCall: (Expression) -> CallChain.Call): CallChain.Call {
+        when (val call = makeCall(expr)) {
             is CallChain.Call.FilterCall -> {
-                if (call.expr is Expression.Binary && call.expr.op is Expression.Op.LogicType) return call
+                if (call.expr.isLogicType()) return call
                 throw TypeErrorException()
             }
             is CallChain.Call.MapCall -> {
-                if (call.expr is Expression.Binary && call.expr.op is Expression.Op.NumType) return call
+                if (call.expr.isNumType()) return call
                 throw TypeErrorException()
             }
         }
@@ -62,11 +63,11 @@ class Parser(private val groups: List<String>) {
         } else throw SyntaxErrorException()
     }
 
-    private fun parseExpression() : Expression {
+    private fun parseExpression(): Expression {
         val left = parseElement()
-        if(pos < groups.size ) {
+        if (pos < groups.size) {
             val op = operationMap[groups[pos]]
-            return if(op != null) {
+            return if (op != null) {
                 pos++
                 Expression.Binary(left, op, parseExpression())
             } else left
@@ -74,12 +75,14 @@ class Parser(private val groups: List<String>) {
         return left
     }
 
-    private fun parseElement() : Expression {
+    private fun parseElement(): Expression {
         if (pos >= groups.size) throw SyntaxErrorException()
         else {
             return when (val group = groups[pos++]) {
                 "element" -> Expression.Element
-                "-" -> Expression.Negate(parseElement())
+                "-" -> {
+                    Expression.Constant(-groups[pos++].toInt())
+                }
                 "(" -> {
                     val arg = parseExpression()
                     val next = groups[pos++]
@@ -93,23 +96,23 @@ class Parser(private val groups: List<String>) {
     }
 }
 
-fun parseAndTransform(input : String) : String {
+fun parseAndTransform(input: String): String {
     val groups = input.splitIntoGroups()
-    if(groups.isEmpty())
+    if (groups.isEmpty())
         return "SYNTAX ERROR"
     val p = Parser(groups)
     return try {
         val cc = p.parse()
         callChainTransform(cc).toCallChain().convertToString()
-    } catch (e : Throwable) {
-        when(e) {
+    } catch (e: Throwable) {
+        when (e) {
             is TypeErrorException -> e.message.toString()
             else -> "SYNTAX ERROR"
         }
     }
 }
 
-class SyntaxErrorException(message : String = "SYNTAX ERROR") : Exception(message)
-class TypeErrorException(message : String = "TYPE ERROR") : Exception(message)
+class SyntaxErrorException(message: String = "SYNTAX ERROR") : Exception(message)
+class TypeErrorException(message: String = "TYPE ERROR") : Exception(message)
 
 
