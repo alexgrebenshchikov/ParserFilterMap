@@ -100,7 +100,7 @@ sealed class Expression {
         }
     }
 
-    private val correctOp = mapOf(Op.LogicType.GT to true, Op.LogicType.LT to true, Op.LogicType.EQ to true)
+    private val compareOp = setOf(Op.LogicType.GT, Op.LogicType.LT, Op.LogicType.EQ)
 
     fun simplifyLtGtEq(): Expression {
         return when (this) {
@@ -108,7 +108,7 @@ sealed class Expression {
             is Constant -> this
             is Binary -> if (left is Binary && left.right is Constant && right is Constant) {
                 val r = calcRight(left.right, right, left.op)
-                if (correctOp[op] != null && r != null) Binary(left.left, op, r) else this
+                if (compareOp.contains(op) && r != null) Binary(left.left, op, r) else this
             } else Binary(left.simplifyLtGtEq(), op, right.simplifyLtGtEq())
         }
     }
@@ -195,7 +195,12 @@ sealed class Expression {
             Element -> false
             is Constant -> false
             is Binary -> when (op) {
-                is Op.LogicType -> (left.isNumType() && right.isNumType()) || (left.isLogicType() && right.isLogicType())
+                is Op.LogicType -> {
+                    if(compareOp.contains(op))
+                        left.isNumType() && right.isNumType()
+                    else
+                        left.isLogicType() && right.isLogicType()
+                }
                 is Op.NumType -> false
             }
         }
